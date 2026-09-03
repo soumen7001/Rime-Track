@@ -1,0 +1,9 @@
+livekit-agents>=1.0
+livekit-plugins-deepgram
+livekit-plugins-openai
+livekit-plugins-silero
+livekit-plugins-rime
+groq
+python-dotenv
+pytest
+pytest-asyncio
