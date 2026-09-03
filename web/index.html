@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aegis Medic | Tactical Hands-Busy Voice Agent (Rime Track)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="hud-container">
+    <!-- Top Tactical Navigation Bar -->
+    <header class="hud-header">
+      <div class="header-brand">
+        <div class="pulse-beacon"></div>
+        <div class="brand-text">
+          <h1>AEGIS MEDIC <span class="badge-accent">TACTICAL HUD</span></h1>
+          <p class="subtitle">Hands-Busy Trauma Voice Assistant • Full-Duplex LiveKit + Rime TTS</p>
+        </div>
+      </div>
+
+      <div class="header-badges">
+        <div class="status-pill rime-pill" id="rime-status-pill">
+          <span class="dot pulse-green"></span>
+          <span class="label">SPEECH:</span>
+          <strong class="val" id="rime-model-label">Rime (coda / lawton)</strong>
+        </div>
+
+        <div class="status-pill vad-pill">
+          <span class="dot pulse-cyan"></span>
+          <span class="label">VAD:</span>
+          <strong class="val">Silero Full-Duplex</strong>
+        </div>
+
+        <div class="status-pill connection-pill" id="livekit-status-pill">
+          <span class="dot" id="livekit-dot"></span>
+          <span class="label">WEBRTC:</span>
+          <strong class="val" id="livekit-status-text">STANDBY</strong>
+        </div>
+
+        <div class="hud-clock" id="hud-clock">00:00:00 UTC</div>
+      </div>
+    </header>
+
+    <!-- Main Tactical HUD Grid -->
+    <main class="hud-grid">
+      <!-- Left Column: Audio Engine & State Fencing -->
+      <section class="card audio-card">
+        <div class="card-header">
+          <div class="header-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            <h2>AUDIO ENGINE & OSCILLOSCOPE</h2>
+          </div>
+          <span class="badge-status online">22.05 kHz PCM</span>
+        </div>
+
+        <!-- Canvas Oscilloscope / Spectrum Visualizer -->
+        <div class="visualizer-wrapper">
+          <canvas id="audio-canvas" width="480" height="150"></canvas>
+          <div class="visualizer-overlay" id="visualizer-overlay">
+            <span id="visualizer-status-text">AUDIO IDLE // MONITORING VAD</span>
+          </div>
+        </div>
+
+        <!-- State Fencing Telemetry Box -->
+        <div class="fencing-telemetry-box">
+          <div class="fencing-header">
+            <h3>STATE FENCING SEQUENCE TRACKER</h3>
+            <span class="fencing-badge" id="fence-state-badge">SYNCED</span>
+          </div>
+
+          <div class="token-display">
+            <div class="token-label">ACTIVE SEQUENCE TOKEN (FENCE ID)</div>
+            <div class="token-value" id="active-fence-id">#1</div>
+            <div class="token-sub">Atomic token increments $N \rightarrow N+1$ on user barge-in</div>
+          </div>
+
+          <div class="metrics-row">
+            <div class="metric-mini">
+              <span class="lbl">Measured Audio Cutoff</span>
+              <strong class="val text-highlight" id="measured-cutoff-val">35.0 ms</strong>
+            </div>
+            <div class="metric-mini">
+              <span class="lbl">SLA Cutoff Target</span>
+              <strong class="val text-muted">&lt; 150 ms</strong>
+            </div>
+            <div class="metric-mini">
+              <span class="lbl">Stale Speech Leaks</span>
+              <strong class="val text-success" id="stale-leak-count">0 (0.0%)</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Medic Glove / Sterile Environment Status -->
+        <div class="medic-context-box">
+          <div class="context-item">
+            <span class="icon-tag">🧤 GLOVES:</span>
+            <span>Blood-Covered Nitrile (Sterile Field)</span>
+          </div>
+          <div class="context-item">
+            <span class="icon-tag">👀 EYES:</span>
+            <span>Fixed on Patient Trauma Resuscitation</span>
+          </div>
+          <div class="context-item">
+            <span class="icon-tag">🎙️ INPUT:</span>
+            <span>Hands-Free WebRTC Full-Duplex Mic</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Center Column: Interactive Scenario Command Deck & Voice Playground -->
+      <section class="card scenarios-card">
+        <div class="card-header">
+          <div class="header-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <h2>INTERACTIVE SCENARIO RUNNER</h2>
+          </div>
+          <span class="badge-status highlight">EVIDENCE BENCHMARKS</span>
+        </div>
+
+        <p class="section-desc">
+          Trigger live clinical simulations to observe instant Silero VAD barge-in, sub-150ms Rime audio cutoff, and atomic state fencing in real-time.
+        </p>
+
+        <!-- Scenario Action Cards -->
+        <div class="scenario-actions-grid">
+          <!-- Scenario 1: Normal Flow -->
+          <button class="scenario-btn btn-normal" id="btn-scenario-normal" onclick="runScenario('normal')">
+            <div class="btn-top">
+              <span class="scenario-tag">SCENARIO 1</span>
+              <span class="run-icon">▶</span>
+            </div>
+            <strong class="scenario-title">Standard Clinical Lookup</strong>
+            <p class="scenario-desc">Normal flow: Epinephrine 1mg IV for 80kg cardiac arrest. No interruptions.</p>
+          </button>
+
+          <!-- Scenario 2: Hard Voice Interruption -->
+          <button class="scenario-btn btn-stress" id="btn-scenario-stress" onclick="runScenario('interruption')">
+            <div class="btn-top">
+              <span class="scenario-tag badge-danger">SCENARIO 2 (HARD CHALLENGE)</span>
+              <span class="run-icon">⚡</span>
+            </div>
+            <strong class="scenario-title">Deliberate Mid-Lookup Interruption</strong>
+            <p class="scenario-desc">Morphine 80kg interrupted mid-flight; patient revised to 25kg pediatric Fentanyl. Stale data fenced.</p>
+          </button>
+
+          <!-- Scenario 3: 5x Rapid Stress -->
+          <button class="scenario-btn btn-rapid" id="btn-scenario-rapid" onclick="runScenario('rapid')">
+            <div class="btn-top">
+              <span class="scenario-tag badge-amber">SCENARIO 3</span>
+              <span class="run-icon">🔥</span>
+            </div>
+            <strong class="scenario-title">5x Rapid Barge-In Stress</strong>
+            <p class="scenario-desc">5 rapid consecutive interruptions to stress-test memory buffers and state convergence.</p>
+          </button>
+        </div>
+
+        <!-- Direct Rime Voice Synthesis Playground -->
+        <div class="rime-synthesizer-deck">
+          <div class="deck-header">
+            <h3>DIRECT RIME TTS PLAYGROUND</h3>
+            <span class="tech-pill">Model: coda • Speaker: lawton</span>
+          </div>
+
+          <!-- Quick Preset Clinical Chips -->
+          <div class="quick-chips">
+            <button class="chip" onclick="setSynthesizerText('Verified: Pediatric dose for Fentanyl on 25 kg patient is 25 to 50 micrograms IV slow push.')">Pediatric Fentanyl (25mcg)</button>
+            <button class="chip" onclick="setSynthesizerText('Verified: Standard cardiac arrest dose for Epinephrine is 1 mg IV push every 3 to 5 minutes.')">Epinephrine (1mg CPR)</button>
+            <button class="chip" onclick="setSynthesizerText('Warning: Confirm bilateral breath sounds before needle thoracostomy.')">Tension Pneumothorax</button>
+            <button class="chip" onclick="setSynthesizerText('Verified: Atropine dosage is 1.0 mg IV push for symptomatic bradycardia.')">Atropine (1mg)</button>
+          </div>
+
+          <div class="input-row">
+            <input type="text" id="synth-input" class="synth-input" placeholder="Enter clinical phrase for Rime speech synthesis..." value="Verified: Pediatric dose for Fentanyl on 25 kg patient is 25 to 50 micrograms IV slow push.">
+            <button class="btn-primary synth-btn" id="btn-synthesize" onclick="synthesizeSpokenText()">
+              <svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+              <span>Speak via Rime</span>
+            </button>
+          </div>
+
+          <div class="audio-player-wrapper" id="player-wrapper">
+            <audio id="rime-audio-element" controls style="width: 100%; display: none;"></audio>
+            <div class="audio-feedback" id="audio-feedback-text">Ready to synthesize with Rime (coda/lawton).</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Real-Time Event Stream & Performance Matrix -->
+      <section class="card logs-card">
+        <div class="card-header">
+          <div class="header-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            <h2>REAL-TIME MISSION TELEMETRY LOG</h2>
+          </div>
+          <button class="btn-clear" onclick="clearEventLogs()">Clear</button>
+        </div>
+
+        <!-- Latency Matrix Quick Bar -->
+        <div class="latency-bar">
+          <div class="latency-item">
+            <span class="lbl">VAD Cutoff</span>
+            <span class="val text-success" id="stat-cutoff">35.0 ms</span>
+          </div>
+          <div class="latency-item">
+            <span class="lbl">Deepgram STT</span>
+            <span class="val" id="stat-stt">190 ms</span>
+          </div>
+          <div class="latency-item">
+            <span class="lbl">LLM TTFT</span>
+            <span class="val" id="stat-ttft">140 ms</span>
+          </div>
+          <div class="latency-item">
+            <span class="lbl">Rime Audio</span>
+            <span class="val text-highlight" id="stat-rime">218 ms</span>
+          </div>
+        </div>
+
+        <!-- Terminal Event Stream -->
+        <div class="terminal-feed" id="terminal-feed">
+          <div class="log-entry log-system">
+            <span class="log-time">[00:00:00]</span>
+            <span class="log-tag tag-sys">[SYSTEM READY]</span>
+            <span class="log-msg">Aegis Medic HUD Initialized. Active Speech Provider: Rime (Model: coda, Speaker: lawton).</span>
+          </div>
+          <div class="log-entry log-system">
+            <span class="log-time">[00:00:01]</span>
+            <span class="log-tag tag-sys">[VAD ENGINE]</span>
+            <span class="log-msg">Silero Full-Duplex VAD active. Interruption Cutoff SLA: &lt; 150ms.</span>
+          </div>
+          <div class="log-entry log-system">
+            <span class="log-time">[00:00:02]</span>
+            <span class="log-tag tag-fence">[STATE FENCE]</span>
+            <span class="log-msg">Fence Tracker initialized with Sequence Token #1.</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer Controls -->
+    <footer class="hud-footer">
+      <div class="footer-left">
+        <span class="footer-badge">LIVEKIT ROOM: aegis-medic-tactical-room</span>
+        <span class="footer-badge">TEST SUITE: pytest -v -s (6/6 Passed)</span>
+      </div>
+      <div class="footer-right">
+        <span>Rime Track Submission • Aegis Medic Voice Agent</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

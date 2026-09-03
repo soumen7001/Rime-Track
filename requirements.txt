@@ -4,6 +4,9 @@ livekit-plugins-openai
 livekit-plugins-silero
 livekit-plugins-rime
 groq
+flask
+flask-cors
+requests
 python-dotenv
 pytest
 pytest-asyncio

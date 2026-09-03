@@ -135,7 +135,14 @@ Runs the full clinical scenario, deliberate mid-lookup interruption stress test,
 python agent.py --demo
 ```
 
-### Mode B: Live WebRTC Agent Worker (Production Mode)
+### Mode B: Full-Stack Tactical Web HUD & Backend Server
+Starts the Flask backend and serves the glassmorphic Tactical Web HUD with real-time oscilloscope, interactive scenario streams, LiveKit WebRTC dispatcher, and direct Rime speech synthesis:
+```bash
+python server.py
+```
+Open **`http://localhost:5000`** in your browser.
+
+### Mode C: Live WebRTC Agent Worker (Production Mode)
 Starts the worker process to connect with a LiveKit room or cloud instance:
 ```bash
 python agent.py dev
@@ -143,8 +150,8 @@ python agent.py dev
 python agent.py run
 ```
 
-### Mode C: Automated Benchmark & Latency Test Suite
-Runs the 6 automated unit & latency validation tests:
+### Mode D: Automated Benchmark & Latency Test Suite
+Runs the 11 automated unit, latency validation, and web server tests:
 ```bash
 pytest -v -s
 ```
