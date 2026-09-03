@@ -1,16 +1,6 @@
 import asyncio
 import time
-from dataclasses import dataclass
-from typing import Any, Dict, Optional
-
-
-@dataclass
-class MedDoseRequest:
-    request_id: int
-    medication: str
-    dose_mg: float
-    patient_weight_kg: float
-    patient_age_group: str = "adult"  # "adult" or "pediatric"
+from typing import Any, Dict
 
 
 class MedDoseTool:

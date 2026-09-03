@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 import time
@@ -7,11 +6,10 @@ from typing import Generator
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, Response, jsonify, render_template, request, send_from_directory
+from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_cors import CORS
 
-from agent import FenceState, FieldMedicAgent, create_tts_engine
-from tools.simulated_tools import MedDoseTool
+from agent import FenceState
 
 load_dotenv(".env")
 
@@ -20,7 +18,6 @@ CORS(app)
 
 # Global Telemetry & Fencing Tracker
 global_fence_state = FenceState(request_id=1)
-global_med_tool = MedDoseTool(delay_seconds=2.0)
 
 
 # ==============================================================================

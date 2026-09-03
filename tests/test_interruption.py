@@ -1,8 +1,6 @@
 import asyncio
 import os
 import time
-from dataclasses import dataclass
-from typing import Any, Dict, List
 
 import pytest
 
@@ -12,13 +10,6 @@ from agent import (
     create_tts_engine,
 )
 from tools.simulated_tools import MedDoseTool
-
-
-@dataclass
-class LatencyMetrics:
-    cutoff_latency_ms: float = 0.0
-    perceived_response_ms: float = 0.0
-    stale_output_detected: bool = False
 
 
 class TestInterruptionLatency:
