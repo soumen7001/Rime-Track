@@ -14,7 +14,7 @@
 | **State Integrity & Fencing** | 0% stale speech leakage | **100% stale results discarded** | **PASSED** |
 | **Tool Task Cancellation** | In-flight background task cancelled | **Instant cancellation on interrupt** | **PASSED** |
 | **Full-Duplex Session Continuity** | Immediate pickup of new utterance | **Continuous without session reset** | **PASSED** |
-| **Speech Provider Observability** | Visible provider logging & fallback | **`Rime (mist/cove)` logged on start** | **PASSED** |
+| **Speech Provider Observability** | Visible provider logging & fallback | **`Rime (coda/lawton)` logged on start** | **PASSED** |
 
 ---
 
@@ -38,7 +38,7 @@ The test harness is located in [`tests/test_interruption.py`](file:///c:/Users/s
 3. `test_newest_request_id_accepted`: Confirms that the newest constraint with matching active fence ID is accepted and formatted for Rime speech.
 4. `test_agent_get_med_dosage_state_fencing`: Executes the agent's live tool dispatcher and proves `None` is returned for interrupted calls.
 5. `test_multiple_rapid_interruptions_stress`: Stress-tests 5 back-to-back mid-execution interruptions and verifies state convergence.
-6. `test_tts_provider_factory`: Validates production Rime initialization (`mist`/`cove`) and explicit fallback disclosure.
+6. `test_tts_provider_factory`: Validates production Rime initialization (`coda`/`lawton`) and explicit fallback disclosure.
 
 ### Execution Command:
 ```bash

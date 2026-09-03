@@ -65,7 +65,7 @@ In emergency medicine, patient constraints change in real time. For example:
                  │                                          │ Tokens      │
                  │                                          ▼             │
                  │  ┌──────────────────────────────────────────────────┐  │
-                 │  │  Rime TTS Engine (Model: mist, Speaker: cove)    │  │
+                 │  │  Rime TTS Engine (Model: coda, Speaker: lawton)  │  │
                  │  │  WebSocket Chunked Low-Latency Audio Streaming   │  │
                  │  └────────────────────────┬─────────────────────────┘  │
                  └───────────────────────────┼────────────────────────────┘

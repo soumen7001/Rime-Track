@@ -8,7 +8,7 @@
 | Timestamp | Section | Key Visuals / Actions |
 | :--- | :--- | :--- |
 | **0:00 – 0:45** | **1. The Problem & Necessity of Voice (25%)** | Introduce yourself, state the role (field medic / flight paramedic), explain why voice is non-negotiable. |
-| **0:45 – 1:30** | **2. Normal Flow & Rime Speech Quality (20%)** | Show normal voice interaction, observe Rime `mist`/`cove` streaming audio and sub-second response. |
+| **0:45 – 1:30** | **2. Normal Flow & Rime Speech Quality (20%)** | Show normal voice interaction, observe Rime `coda`/`lawton` streaming audio and sub-second response. |
 | **1:30 – 2:45** | **3. The Hard Voice Problem & Live Stress Test (25%)** | Introduce the 2.5s DB lookup, interrupt mid-generation, prove instant $<150\text{ ms}$ cutoff and state fencing. |
 | **2:45 – 3:30** | **4. Latency Telemetry & Automated Evidence (20%)** | Show terminal benchmark logs, run `pytest -v -s`, highlight `RIME_EVIDENCE.md`. |
 | **3:30 – 4:00** | **5. Architecture, Provider Observability & Wrap-up (10%)** | Highlight LiveKit + Rime WebRTC pipeline, configuration hygiene, and concluding remarks. |
