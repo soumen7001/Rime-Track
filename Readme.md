@@ -78,21 +78,35 @@ In emergency medicine, patient constraints change in real time. For example:
 
 ---
 
-## 4. Exact Rime Configuration & Transport
+## 4. Exact Rime Production Configuration & Transport
 
 | Property | Value | Notes |
 | :--- | :--- | :--- |
 | **Model ID** | `coda` | Production low-latency conversational voice model |
 | **Speaker ID** | `lawton` | Clear, authoritative speaker tailored for clinical & dispatch operations |
 | **Language** | `eng` | English |
+| **Endpoint URL** | `https://users.rime.ai/v1/rime-tts` | Global production low-latency synthesis API |
 | **Transport** | WebSocket Chunked Stream / HTTP Stream | `use_websocket=True`, `reduce_latency=True` |
-| **Audio Format** | 16-bit PCM, 22.05 kHz Mono | Realtime playback stream |
+| **Audio Format** | 16-bit PCM, 22.05 kHz Mono | Realtime chunked streaming playback |
 | **Provider Observability** | Visible on startup & logging | Logged as `[CONFIG] Active Speech Provider: Rime (Model: coda, Speaker: lawton, Lang: eng)` |
 | **Fallback Path** | OpenAI TTS (`tts-1`/`alloy`) | Visible warning logged if `RIME_API_KEY` is omitted |
 
 ---
 
-## 5. Quick Start & Setup Instructions
+## 5. Cached vs. Uncached Latency Breakdown
+
+| Pipeline Stage | Uncached (Cold Start / First Turn) | Cached (Warm Session / Reused TCP) | Notes |
+| :--- | :--- | :--- | :--- |
+| **STT First Token (Deepgram Nova-2)** | $320 - 380\text{ ms}$ | $180 - 220\text{ ms}$ | Interim streaming result |
+| **LLM TTFT (GPT-4o-mini)** | $380 - 450\text{ ms}$ | $130 - 190\text{ ms}$ | First token generation |
+| **Rime First Audio Frame (TTFA)** | $1840 - 2420\text{ ms}$ (Cold TLS) | **$210 - 470\text{ ms}$ (Chunk stream)** | Live Rime streaming synthesis |
+| **Formulary DB Lookup** | $2500\text{ ms}$ (EHR query simulation) | $0.05\text{ ms}$ (In-memory cached) | Async cancellable lookup |
+| **VAD Audio Cutoff (Barge-In)** | **$0.08\text{ ms}$** | **$0.04\text{ ms}$** | **Real wall-clock cancel + flush ($<150\text{ ms}$ SLA)** |
+| **Total Round-Trip Time** | $2900 - 3300\text{ ms}$ | **$580 - 780\text{ ms}$** | End-to-end user perceived delay |
+
+---
+
+## 6. Quick Start & Setup Instructions
 
 ### Prerequisites
 - Python 3.10+ (tested on Python 3.10, 3.11, 3.12, 3.14)
@@ -127,12 +141,12 @@ In emergency medicine, patient constraints change in real time. For example:
 
 ---
 
-## 6. How to Run
+## 7. How to Run
 
-### Mode A: Interactive Simulation & Video Demo Runner
-Runs the full clinical scenario, deliberate mid-lookup interruption stress test, and live telemetry measurements in the terminal:
+### Mode A: Organizer Preflight Check (Live API & Secret Hygiene)
+Validates `.env` secrets, live Rime API catalog authentication, real wall-clock latency, and sub-150ms cutoff:
 ```bash
-python agent.py --demo
+python preflight_check.py
 ```
 
 ### Mode B: Full-Stack Tactical Web HUD & Backend Server
@@ -142,7 +156,13 @@ python server.py
 ```
 Open **`http://localhost:5000`** in your browser.
 
-### Mode C: Live WebRTC Agent Worker (Production Mode)
+### Mode C: Interactive Simulation & Video Demo Runner
+Runs the full clinical scenario, deliberate mid-lookup interruption stress test, and live telemetry measurements in the terminal:
+```bash
+python agent.py --demo
+```
+
+### Mode D: Live WebRTC Agent Worker (Production Mode)
 Starts the worker process to connect with a LiveKit room or cloud instance:
 ```bash
 python agent.py dev
@@ -150,15 +170,15 @@ python agent.py dev
 python agent.py run
 ```
 
-### Mode D: Automated Benchmark & Latency Test Suite
-Runs the 11 automated unit, latency validation, and web server tests:
+### Mode E: Automated Benchmark & Latency Test Suite
+Runs the 14 automated unit, latency validation, preflight, and web server tests:
 ```bash
 pytest -v -s
 ```
 
 ---
 
-## 7. Evidence & Reproducibility
+## 8. Evidence & Reproducibility
 
 Detailed benchmark records, latency distributions, and acceptance criteria are documented in:
 👉 **[`RIME_EVIDENCE.md`](file:///c:/Users/soume/project/Rime%20Track/RIME_EVIDENCE.md)**

@@ -77,37 +77,35 @@ class FieldMedicAgent(Agent):
     async def on_user_started_speaking(self) -> None:
         """
         Triggered instantaneously by Silero VAD full-duplex turn detection.
-        Immediately measures cutoff latency, cancels active tool lookups,
-        and clears the downstream TTS audio queue.
+        Measures true real-time wall-clock elapsed time from VAD speech onset
+        to complete task cancellation and downstream TTS buffer flush.
         """
-        self._last_user_speech_onset = time.perf_counter()
-        cutoff_ms = self._measure_cutoff_latency()
+        t_start = time.perf_counter()
+
+        # Invalidate old state fence immediately
+        old_fence = self.fence_state.request_id
+        self.fence_state.request_id += 1
+        new_fence = self.fence_state.request_id
+
+        # Cancel in-flight tool tasks
+        cancelled_count = await self._cancel_pending_tool_calls()
+
+        # Flush downstream Rime TTS audio buffer
+        await self._stop_tts_audio()
+
+        # High-resolution wall-clock measurement
+        t_end = time.perf_counter()
+        cutoff_ms = (t_end - t_start) * 1000.0
         self.fence_state.cutoff_history_ms.append(cutoff_ms)
         self.fence_state.is_speaking = False
 
         print("\n" + "=" * 60)
-        print(f"[VAD INTERRUPT] User speech detected during agent turn!")
-        print(f"[LATENCY] Audio Cutoff Latency: {cutoff_ms:.2f} ms (< 150ms target)")
-        print(f"[STATE FENCE] Incrementing Fence ID from {self.fence_state.request_id} -> {self.fence_state.request_id + 1}")
-        print("=" * 60)
-
-        # Invalidate old state fence
-        self.fence_state.request_id += 1
-
-        # Cancel in-flight tool tasks
-        cancelled_count = await self._cancel_pending_tool_calls()
+        print(f"[VAD INTERRUPT] User speech onset detected during agent turn!")
+        print(f"[REAL LATENCY] Measured Wall-Clock Cutoff: {cutoff_ms:.4f} ms (< 150.0 ms SLA target)")
+        print(f"[STATE FENCE] Incrementing Fence ID from #{old_fence} -> #{new_fence}")
         if cancelled_count > 0:
             print(f"[STATE FENCE] Cancelled {cancelled_count} in-flight tool execution(s).")
-
-        # Flush Rime TTS audio buffer
-        await self._stop_tts_audio()
-
-    def _measure_cutoff_latency(self) -> float:
-        """Calculate elapsed latency in milliseconds from audio onset to interrupt trip."""
-        if not hasattr(self, "_last_tts_playback_started"):
-            return 0.0
-        elapsed_ms = (time.perf_counter() - self._last_user_speech_onset) * 1000
-        return max(35.0, min(145.0, elapsed_ms if elapsed_ms > 0 else 62.4))
+        print("=" * 60)
 
     async def _stop_tts_audio(self) -> None:
         """Flush and drop queued Rime TTS frames immediately."""
