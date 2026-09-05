@@ -788,3 +788,308 @@ body {
   border-radius: 4px;
   border: 1px solid var(--border-color);
 }
+
+/* ==============================================================================
+   Tabs Navigation & Content
+   ============================================================================== */
+
+.hud-tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-main);
+  border-color: rgba(0, 240, 181, 0.4);
+}
+
+.tab-btn.active {
+  background: rgba(0, 240, 181, 0.12);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  box-shadow: var(--shadow-glow);
+}
+
+.tab-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* ==============================================================================
+   Tactical Noise Simulator Box
+   ============================================================================== */
+
+.noise-generator-box {
+  background: rgba(8, 11, 18, 0.7);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.noise-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.noise-header h3 {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--text-main);
+}
+
+.noise-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.noise-buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.noise-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.noise-btn:hover {
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+.noise-btn.active-noise {
+  background: rgba(255, 184, 0, 0.15);
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+  box-shadow: 0 0 10px rgba(255, 184, 0, 0.3);
+}
+
+.btn-stop-noise {
+  background: rgba(255, 51, 102, 0.1);
+  border-color: rgba(255, 51, 102, 0.3);
+  color: var(--accent-danger);
+}
+
+.btn-stop-noise:hover {
+  background: rgba(255, 51, 102, 0.2);
+  border-color: var(--accent-danger);
+}
+
+.noise-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.slider-lbl {
+  color: var(--text-muted);
+}
+
+.slider-val {
+  color: var(--accent-cyan);
+  font-weight: 600;
+  min-width: 80px;
+}
+
+/* ==============================================================================
+   Benchmark Table & Summary
+   ============================================================================== */
+
+.benchmark-card {
+  padding: 24px;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+
+.benchmark-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-family: var(--font-mono);
+}
+
+.benchmark-table th {
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--border-color);
+  color: var(--text-muted);
+  text-align: left;
+  padding: 12px 14px;
+  font-family: var(--font-heading);
+  letter-spacing: 0.05em;
+}
+
+.benchmark-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(45, 62, 95, 0.25);
+  color: var(--text-main);
+}
+
+.benchmark-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.benchmark-table tr.highlight-row {
+  background: rgba(0, 240, 181, 0.08);
+  border-left: 3px solid var(--accent-cyan);
+}
+
+.badge-success {
+  background: rgba(0, 240, 181, 0.15);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(0, 240, 181, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.benchmark-summary-box {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.summary-metric {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summary-metric .lbl {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.summary-metric .val {
+  font-size: 24px;
+  font-family: var(--font-heading);
+  font-weight: 800;
+}
+
+.summary-metric p {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+/* ==============================================================================
+   "Writing for the Ear" Pharmacopeia Layout
+   ============================================================================== */
+
+.ear-writing-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+  .ear-writing-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ear-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ear-box h3 {
+  font-size: 13px;
+  font-family: var(--font-heading);
+  color: var(--text-main);
+}
+
+.ear-textarea {
+  width: 100%;
+  background: #030509;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 12px;
+  resize: vertical;
+}
+
+.pacing-selector-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+.hud-select {
+  background: #030509;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+.normalized-preview-box {
+  background: #030509;
+  border: 1px solid rgba(0, 240, 181, 0.4);
+  border-radius: 6px;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 14px;
+  min-height: 110px;
+}
+
+.pacing-badge-display {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+

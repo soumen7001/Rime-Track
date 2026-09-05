@@ -451,7 +451,98 @@ def simulate_scenario():
 
 
 # ==============================================================================
-# 6. Main Entry Point
+# 6. Benchmark & Speech Normalization Endpoints (Hackathon Upgrades)
+# ==============================================================================
+
+@app.route("/api/benchmark", methods=["GET", "POST"])
+def run_benchmark_endpoint():
+    """Execute multi-provider TTS benchmark suite and return performance telemetry."""
+    from benchmark_runner import run_full_benchmark
+    try:
+        report = run_full_benchmark()
+        return jsonify(report)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/normalize-speech", methods=["POST"])
+def normalize_speech_endpoint():
+    """Apply Brooke Larson 'Writing for the Ear' phonetic & urgency normalization."""
+    from tools.ear_writing_normalizer import normalizer
+    data = request.get_json() or {}
+    raw_text = data.get("text", "")
+    triage_level = data.get("triage_level", "urgent")
+
+    normalized_text, speed = normalizer.normalize_for_speech(raw_text, triage_level)
+    return jsonify({
+        "raw_text": raw_text,
+        "normalized_text": normalized_text,
+        "triage_level": triage_level,
+        "pacing_speed": speed,
+    })
+
+
+@app.route("/api/tts-stream", methods=["POST"])
+def direct_tts_stream():
+    """Direct in-browser trial endpoint streaming live Rime audio with zero config."""
+    from tools.ear_writing_normalizer import normalizer
+    data = request.get_json() or {}
+    raw_text = data.get("text", "Administer one gram Tranexamic acid I-V push immediately.")
+    triage_level = data.get("triage_level", "urgent")
+    speaker = data.get("speaker", "lawton")
+    model_id = data.get("modelId", "coda")
+
+    normalized_text, speed = normalizer.normalize_for_speech(raw_text, triage_level)
+    rime_key = os.getenv("RIME_API_KEY", "")
+
+    if not rime_key or rime_key == "your-rime-api-key":
+        return jsonify({
+            "error": "RIME_API_KEY not configured",
+            "normalized_text": normalized_text
+        }), 400
+
+    payload = {
+        "speaker": speaker,
+        "text": normalized_text,
+        "modelId": model_id,
+        "samplingRate": 22050,
+        "speedAlpha": speed,
+        "audioFormat": "mp3",
+        "reduceLatency": True
+    }
+
+    try:
+        t0 = time.perf_counter()
+        resp = requests.post(
+            "https://users.rime.ai/v1/rime-tts",
+            json=payload,
+            headers={
+                "Authorization": f"Bearer {rime_key}",
+                "Content-Type": "application/json",
+                "Accept": "audio/mp3"
+            },
+            timeout=10.0
+        )
+        latency_ms = (time.perf_counter() - t0) * 1000.0
+
+        if resp.status_code == 200:
+            return Response(
+                resp.content,
+                mimetype="audio/mpeg",
+                headers={
+                    "X-Rime-Latency-Ms": str(round(latency_ms, 2)),
+                    "X-Normalized-Text": normalized_text,
+                    "X-Pacing-Speed": str(speed)
+                }
+            )
+        else:
+            return jsonify({"error": f"Rime API returned {resp.status_code}: {resp.text}"}), 502
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ==============================================================================
+# 7. Main Entry Point
 # ==============================================================================
 
 if __name__ == "__main__":

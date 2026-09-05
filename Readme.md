@@ -170,8 +170,14 @@ python agent.py dev
 python agent.py run
 ```
 
-### Mode E: Automated Benchmark & Latency Test Suite
-Runs the 14 automated unit, latency validation, preflight, and web server tests:
+### Mode E: Multi-Provider TTS Benchmark Suite (Hackathon Page 4)
+Runs the comparative benchmark suite evaluating Rime vs. Cartesia vs. ElevenLabs vs. OpenAI:
+```bash
+python benchmark_runner.py
+```
+
+### Mode F: Automated Benchmark & Latency Test Suite (20/20 Passing)
+Runs the 20 automated unit, latency validation, preflight, ear normalizer, and web server tests:
 ```bash
 pytest -v -s
 ```
@@ -182,6 +188,12 @@ pytest -v -s
 
 Detailed benchmark records, latency distributions, and acceptance criteria are documented in:
 👉 **[`RIME_EVIDENCE.md`](file:///c:/Users/soume/project/Rime%20Track/RIME_EVIDENCE.md)**
+
+Key Features Implemented:
+1. **Multi-Provider Benchmark Lab:** Comparative latency, TTFA, and clinical phoneme clarity matrix.
+2. **"Writing for the Ear" Pharmacopeia Normalizer:** Brooke Larson guidelines for Latin abbreviations, medical dosages, and triage urgency pacing.
+3. **Tactical Adverse Noise Simulator:** Ambient sound injector (Helicopter/Siren/Trauma Bay) for stress-testing VAD & speech clarity.
+4. **State Fencing Engine:** Sub-150ms Rime audio cutoff with 0% stale speech leakage.
 
 Detailed 4-minute video recording script and demo flow are documented in:
 👉 **[`DEMO_SCRIPT.md`](file:///c:/Users/soume/project/Rime%20Track/DEMO_SCRIPT.md)**

@@ -16,6 +16,7 @@ from livekit.agents import (
 from livekit.plugins import deepgram, openai, silero
 from livekit.plugins import rime
 
+from tools.ear_writing_normalizer import normalizer, EarWritingNormalizer
 from tools.simulated_tools import MedDoseTool
 
 load_dotenv(".env")
@@ -43,18 +44,22 @@ class FenceState:
 class FieldMedicAgent(Agent):
     """
     Hands-busy emergency field medic assistant.
-    Enforces strict full-duplex interruption cancellation and state fencing.
+    Enforces strict full-duplex interruption cancellation, state fencing,
+    and Brooke Larson's 'Writing for the Ear' phonetic delivery rules.
     """
 
     def __init__(self, fence_state: FenceState, med_tool: MedDoseTool, speech_provider_name: str = "Rime"):
         super().__init__(
             instructions=(
                 "You are 'Aegis Medic', an ultra-responsive, hands-busy tactical field medic voice assistant. "
-                "The user is a flight paramedic or field medic actively treating trauma patients. "
-                "Deliver direct, crisp, concise clinical answers (1-2 short sentences max). "
-                "When medication lookups are requested, utilize the get_med_dosage tool. "
-                "Always confirm medication, verified dosage, and route clearly. "
-                "Never invent dosage numbers outside tool outputs."
+                "The user is a flight paramedic or combat medic actively treating trauma patients in high-noise environments. "
+                "WRITING FOR THE EAR RULES: "
+                "1. Deliver direct, punchy spoken sentences (1-2 short sentences maximum). "
+                "2. Avoid visual lists, asterisks, bullet points, or markdown. "
+                "3. Speak numbers and dosages clearly (e.g., 'one gram', 'twenty-five micrograms', 'I-V push'). "
+                "4. When medication lookups are requested, execute the get_med_dosage tool. "
+                "5. Confirm medication, verified dosage, and route unambiguously. "
+                "6. Never invent dosage numbers outside verified tool outputs."
             ),
         )
         self.fence_state = fence_state
