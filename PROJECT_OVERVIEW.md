@@ -110,6 +110,7 @@ Rime Track/
 ├── .gitignore                 # Ignores .env, __pycache__, api_key.md, etc.
 ├── agent.py                   # Main LiveKit Agents worker (Phase 1–2 implementation)
 ├── server.py                  # Flask tactical HUD web server (telemetry, SSE scenarios)
+├── preflight_check.py         # Organizer & preflight verification script
 ├── tools/
 │   ├── __init__.py
 │   └── simulated_tools.py     # MedDoseTool — 2.5s simulated clinical DB lookup
@@ -120,7 +121,8 @@ Rime Track/
 └── tests/
     ├── __init__.py
     ├── test_interruption.py   # 6 tests: cutoff latency, state fencing, provider config
-    └── test_web_server.py     # 5 tests: routes, telemetry, SSE scenario streaming
+    ├── test_preflight.py     # 3 tests: env hygiene, live Rime catalog, real cutoff benchmark
+    └── test_web_server.py    # 5 tests: routes, telemetry, SSE scenario streaming
 ```
 
 ---
@@ -466,12 +468,8 @@ tests/test_web_server.py::test_simulate_interruption_stress_stream              
 
 Run all tests:
 ```bash
-pytest tests/ -v
-```
-
-Run with output capture disabled (for live telemetry):
-```bash
-pytest tests/test_interruption.py -v -s
+pytest tests/ -v          # Run all 14 tests
+pytest tests/ -v -s       # With live output capture
 ```
 
 ### Test Descriptions
@@ -496,6 +494,14 @@ pytest tests/test_interruption.py -v -s
 | `test_livekit_token_endpoint` | `GET /api/token` | Status 200, roomName="trauma-unit-1", token present |
 | `test_simulate_normal_flow_stream` | `GET /api/simulate?scenario=normal` | SSE stream contains SCENARIO_START, Epinephrine, SCENARIO_COMPLETE |
 | `test_simulate_interruption_stress_stream` | `GET /api/simulate?scenario=interruption` | SSE stream contains VAD_INTERRUPT, STATE_FENCE_DISCARD, Fentanyl, SCENARIO_COMPLETE |
+
+#### Preflight Tests (`test_preflight.py`)
+
+| Test | Description |
+|------|-------------|
+| `test_preflight_environment_hygiene` | Verifies all environment secrets are loaded and none are exposed raw |
+| `test_preflight_live_rime_catalog` | Live tests Rime production catalog (model: coda, speaker: lawton); skipped if `RIME_API_KEY` not set |
+| `test_preflight_hard_voice_real_cutoff` | Real wall-clock benchmark of `on_user_started_speaking()` interruption; asserts <150 ms SLA |
 
 ---
 
@@ -546,10 +552,16 @@ python agent.py --demo    # Run interactive simulated demo (for video recording)
 python server.py          # Flask server at http://127.0.0.1:5000
 ```
 
+#### Preflight Verification
+
+```bash
+python preflight_check.py # Run organizer & preflight verification suite
+```
+
 #### Tests
 
 ```bash
-pytest tests/ -v          # Run all 11 tests
+pytest tests/ -v          # Run all 14 tests
 pytest tests/ -v -s       # With live output capture
 ```
 
