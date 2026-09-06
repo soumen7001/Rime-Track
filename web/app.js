@@ -792,8 +792,26 @@ async function fetchTelemetry() {
 }
 
 // ==============================================================================
+// ==============================================================================
 // 10. Live Conversational Voice Agent & Web Speech Recognition
 // ==============================================================================
+
+let speechDebounceTimer = null;
+let lastProcessedTranscript = '';
+let isTurnInProgress = false;
+
+function isExplicitInterruptPhrase(text) {
+  const lower = text.toLowerCase().trim();
+  const interruptKeywords = [
+    'wait', 'stop', 'hold on', 'cancel', 'correction', 'scratch that',
+    'abort', 'switch to', 'pause', 'quiet', 'shut up', 'instead'
+  ];
+  return interruptKeywords.some(k => lower.includes(k));
+}
+
+function anyCorrectionKeyword(text) {
+  return isExplicitInterruptPhrase(text);
+}
 
 function initSpeechRecognition() {
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -830,18 +848,50 @@ function initSpeechRecognition() {
       }
     }
 
+    const currentSpoken = (finalTranscript || interimTranscript).trim();
+
     if (interimTranscript) {
       if (dom.liveTranscriptPreview) dom.liveTranscriptPreview.textContent = `Medic: "${interimTranscript}"`;
-      // If user speaks while agent is playing, trigger barge-in!
+
+      // Smart Echo Shield & True Barge-in Filter:
+      // When audio is playing, only interrupt if the user explicitly says an interruption keyword.
+      // This prevents the microphone from cutting off the agent due to speaker acoustic feedback.
       if (state.isAudioPlaying) {
-        triggerManualBargeIn();
+        if (isExplicitInterruptPhrase(interimTranscript)) {
+          triggerManualBargeIn();
+          handleVoiceTurn(interimTranscript, true);
+        }
+        return; // Ignore other interim echo while audio is playing
+      }
+
+      // Fast Endpointing Debounce: dispatch speech turn 700ms after user finishes speaking
+      if (!state.isAudioPlaying && interimTranscript.length > 3) {
+        clearTimeout(speechDebounceTimer);
+        speechDebounceTimer = setTimeout(() => {
+          if (!isTurnInProgress && interimTranscript !== lastProcessedTranscript) {
+            handleVoiceTurn(interimTranscript);
+          }
+        }, 750);
       }
     }
 
     if (finalTranscript && finalTranscript.trim().length > 1) {
+      clearTimeout(speechDebounceTimer);
       const text = finalTranscript.trim();
       if (dom.liveTranscriptPreview) dom.liveTranscriptPreview.textContent = `Medic: "${text}"`;
-      handleVoiceTurn(text);
+
+      // If audio is playing and user finalized speech
+      if (state.isAudioPlaying) {
+        if (isExplicitInterruptPhrase(text)) {
+          triggerManualBargeIn();
+          handleVoiceTurn(text, true);
+        }
+        return;
+      }
+
+      if (text !== lastProcessedTranscript) {
+        handleVoiceTurn(text);
+      }
     }
   };
 
@@ -869,7 +919,6 @@ function toggleLiveVoiceConversation() {
   }
 
   if (!state.speechRecognition) {
-    // Fallback: trigger quick prompt
     handleVoiceTurn('Checking standard dose for Epinephrine on 80 kilogram cardiac patient.');
     return;
   }
@@ -917,12 +966,15 @@ function stopPttSpeech() {
 
 async function handleVoiceTurn(transcript, isInterrupt = false) {
   if (!transcript || transcript.trim().length === 0) return;
+  if (isTurnInProgress && transcript === lastProcessedTranscript) return;
 
+  isTurnInProgress = true;
+  lastProcessedTranscript = transcript;
   const userTime = new Date().toLocaleTimeString('en-US', { hour12: false });
 
   // Check if this turn is an interruption / barge-in
   const lower = transcript.toLowerCase();
-  const isBarge = isInterrupt || state.isAudioPlaying || anyCorrectionKeyword(lower);
+  const isBarge = isInterrupt || state.isAudioPlaying || isExplicitInterruptPhrase(lower);
 
   if (isBarge && state.isAudioPlaying) {
     triggerManualBargeIn();
@@ -935,6 +987,8 @@ async function handleVoiceTurn(transcript, isInterrupt = false) {
   // 2. Update UI Status to Thinking
   if (dom.agentStateText) dom.agentStateText.textContent = 'AGENT REASONING // EHR FORMULARY LOOKUP...';
   if (dom.visualizerStatus) dom.visualizerStatus.textContent = 'PROCESSING CLINICAL QUERY...';
+
+  const tStartTurn = performance.now();
 
   try {
     const res = await fetch('/api/voice-turn', {
@@ -951,6 +1005,7 @@ async function handleVoiceTurn(transcript, isInterrupt = false) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const data = await res.json();
+    const roundTripMs = Math.round(performance.now() - tStartTurn);
 
     // 3. Update State Fencing Display
     if (data.fence_id) {
@@ -969,26 +1024,29 @@ async function handleVoiceTurn(transcript, isInterrupt = false) {
 
     // 5. Append Agent Spoken Response Bubble
     const agentTime = new Date().toLocaleTimeString('en-US', { hour12: false });
-    appendDialogueBubble('🤖 AEGIS MEDIC', data.reply_text, agentTime, data.telemetry?.speech_provider || 'RIME CODA (LAWTON)', false);
+    const providerTag = data.audio_base64 ? `RIME CODA (${roundTripMs}ms TTFA)` : 'AEGIS TACTICAL ENGINE';
+    appendDialogueBubble('🤖 AEGIS MEDIC', data.reply_text, agentTime, providerTag, false);
 
     // 6. Play Synthesized Rime Audio or Browser Speech Synthesis
     if (data.audio_base64) {
       playBase64Audio(data.audio_base64, data.normalized_text);
-      appendLog('[RIME TTS AUDIO STREAM]', 'tag-rime', `Synthesized speech (${data.telemetry?.rime_latency_ms || 210}ms TTFA): "${data.reply_text.substring(0, 45)}..."`);
+      appendLog('[RIME TTS AUDIO STREAM]', 'tag-rime', `Synthesized speech (${roundTripMs}ms TTFA): "${data.reply_text.substring(0, 45)}..."`);
     } else {
-      // Browser WebSpeech Voice Fallback
       speakTextWithBrowserVoice(data.reply_text);
-      appendLog('[SPEECH SYNTHESIS]', 'tag-rime', `Speaking clinical guidance: "${data.reply_text.substring(0, 45)}..."`);
+      appendLog('[SPEECH SYNTHESIS]', 'tag-rime', `Speaking clinical guidance (${roundTripMs}ms): "${data.reply_text.substring(0, 45)}..."`);
     }
 
   } catch (err) {
     appendLog('[VOICE TURN NOTICE]', 'tag-sys', `Handling local clinical query: ${transcript}`);
-    // Generate immediate client-side clinical fallback
     const fallbackAnswer = generateClientClinicalFallback(transcript);
     const agentTime = new Date().toLocaleTimeString('en-US', { hour12: false });
     appendDialogueBubble('🤖 AEGIS MEDIC', fallbackAnswer.text, agentTime, 'AEGIS TACTICAL ENGINE', false);
     if (fallbackAnswer.card) updateDosageCard(fallbackAnswer.card);
     speakTextWithBrowserVoice(fallbackAnswer.text);
+  } finally {
+    setTimeout(() => {
+      isTurnInProgress = false;
+    }, 500);
   }
 }
 
@@ -1020,22 +1078,35 @@ function speakTextWithBrowserVoice(text) {
 
 function generateClientClinicalFallback(query) {
   const q = query.toLowerCase();
-  if (q.includes('fever') || q.includes('paracetamol') || q.includes('temperature')) {
+  if (q.includes('hello') || q.includes('hi') || q.includes('status')) {
     return {
-      text: "For fever: administer one thousand milligrams Acetaminophen oral or IV every six hours for adults, or fifteen milligrams per kilogram for pediatric patients.",
-      card: { medication: "Acetaminophen (Paracetamol)", dose: "1000 mg", route: "Oral / IV q6h", patient_weight_kg: 80 }
+      text: "Aegis Medic online and operational. Ready for trauma triage, medication dosage calculations, or clinical advice. What is your patient status?",
+      card: { medication: "System Online", dose: "Ready for input", route: "Voice Stream Active", patient_weight_kg: 80 }
+    };
+  }
+  if (q.includes('fever') || q.includes('paracetamol') || q.includes('temperature') || q.includes('tylenol')) {
+    const isStatement = q.includes('is the medicine') || q.includes('is used for');
+    return {
+      text: (isStatement ? "Correct. " : "") + "For adult fever, administer one thousand milligrams Acetaminophen oral or IV every six hours, or four hundred milligrams Ibuprofen with food. For pediatric patients, dose at fifteen milligrams per kilogram.",
+      card: { medication: "Acetaminophen (Paracetamol)", dose: "1000 mg (or 15 mg/kg peds)", route: "Oral / IV q6h", patient_weight_kg: 80 }
+    };
+  }
+  if (q.includes('first aid') || q.includes('emergency') || q.includes('abcde')) {
+    return {
+      text: "Primary first aid triage follows the ABCDE survey: control massive bleeding immediately with direct pressure or tourniquet, secure the airway, verify breathing, check radial pulse, and prevent hypothermia.",
+      card: { medication: "Primary ABCDE Trauma Survey", dose: "Life Threat Control", route: "Tactical Triage", patient_weight_kg: 80 }
+    };
+  }
+  if (q.includes('pressure') || q.includes('bp') || q.includes('hypotension')) {
+    return {
+      text: "For blood pressure management in trauma: assess radial pulse and perfusion. Target a permissive systolic blood pressure of ninety, or administer a five hundred milliliter warm normal saline bolus if radial pulse is lost.",
+      card: { medication: "Hemodynamic Resuscitation", dose: "500 mL warm NS/LR", route: "IV / IO Bolus", patient_weight_kg: 80 }
     };
   }
   if (q.includes('break') || q.includes('hand') || q.includes('fracture') || q.includes('bone') || q.includes('splint')) {
     return {
-      text: "For a broken hand or fracture: assess distal neurovascular pulse and motor function, apply a padded SAM splint in position of function, elevate the hand, and give Fentanyl or Paracetamol for pain.",
+      text: "For a fracture or hand injury: first assess distal pulse, motor, and sensory function. Apply a padded SAM splint in position of function, elevate the limb, and give fifty to one hundred micrograms Fentanyl for pain.",
       card: { medication: "SAM Splint + Analgesia", dose: "Immobilize + Fentanyl 50 mcg", route: "Anatomic Splint + IV", patient_weight_kg: 80 }
-    };
-  }
-  if (q.includes('first aid') || q.includes('emergency')) {
-    return {
-      text: "First aid priority: follow the ABCDE trauma survey. Control catastrophic bleeding with direct pressure or tourniquet, secure the airway, verify breathing, check radial pulse, and prevent hypothermia.",
-      card: { medication: "Primary ABCDE Trauma Survey", dose: "Life Threat Control", route: "Tactical Triage", patient_weight_kg: 80 }
     };
   }
   if (q.includes('fentanyl') || q.includes('pediatric')) {
@@ -1050,14 +1121,16 @@ function generateClientClinicalFallback(query) {
       card: { medication: "Epinephrine (1:10,000)", dose: "1.0 mg (10 mL)", route: "IV / IO Push q3-5min", patient_weight_kg: 80 }
     };
   }
+  if (q.includes('tranexamic') || q.includes('txa') || q.includes('hemorrhage') || q.includes('bleed')) {
+    return {
+      text: "For severe trauma hemorrhage within three hours of injury, administer one gram Tranexamic Acid IV piggyback in one hundred milliliters normal saline over ten minutes.",
+      card: { medication: "Tranexamic Acid (TXA)", dose: "1.0 g in 100 mL NS", route: "IV Piggyback over 10 min", patient_weight_kg: 80 }
+    };
+  }
   return {
-    text: `Aegis Medic clinical guidance for ${query}: perform rapid trauma assessment, check vital signs, and state specific medication or airway protocol needed.`,
+    text: `For ${query}: initiate primary ABC survey, verify airway patency, check radial pulse, and specify if you require medication dosing, airway intervention, or trauma protocol.`,
     card: { medication: "Clinical Triage Protocol", dose: "Standard Order", route: "Tactical Decision Support", patient_weight_kg: 80 }
   };
-}
-
-function anyCorrectionKeyword(text) {
-  return ['wait', 'correction', 'cancel', 'switch to', 'stop', 'hold on', 'scratch that'].some(k => text.includes(k));
 }
 
 function appendDialogueBubble(speaker, text, time, metaTag, isBargeIn = false) {

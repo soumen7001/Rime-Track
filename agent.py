@@ -82,8 +82,9 @@ class FieldMedicAgent(Agent):
     async def on_user_started_speaking(self) -> None:
         """
         Triggered instantaneously by Silero VAD full-duplex turn detection.
-        Measures true real-time wall-clock elapsed time from VAD speech onset
+        Measures true real-time wall-clock latency from VAD speech onset
         to complete task cancellation and downstream TTS buffer flush.
+        Signals LiveKit session to properly interrupt and resume.
         """
         t_start = time.perf_counter()
 
@@ -95,7 +96,14 @@ class FieldMedicAgent(Agent):
         # Cancel in-flight tool tasks
         cancelled_count = await self._cancel_pending_tool_calls()
 
-        # Flush downstream Rime TTS audio buffer
+        # Signal LiveKit session to interrupt current speech generation
+        try:
+            await self.session.interrupt(force=True)
+        except RuntimeError:
+            # Session might not be running yet; flush manually as fallback
+            await self._stop_tts_audio()
+
+        # Flush downstream Rime TTS audio buffer (fallback if session.interrupt didn't)
         await self._stop_tts_audio()
 
         # High-resolution wall-clock measurement
