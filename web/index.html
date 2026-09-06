@@ -72,11 +72,26 @@
           <span class="badge-status online">22.05 kHz PCM</span>
         </div>
 
-        <!-- Canvas Oscilloscope / Spectrum Visualizer -->
-        <div class="visualizer-wrapper">
-          <canvas id="audio-canvas" width="480" height="140"></canvas>
+        <!-- Visualizer Mode Controls -->
+        <div class="vis-mode-bar">
+          <button class="vis-mode-btn active" id="btn-vis-orb" onclick="setVisualizerMode('orb')">
+            <span class="btn-icon">🔮</span> 3D Holographic Orb
+          </button>
+          <button class="vis-mode-btn" id="btn-vis-osc" onclick="setVisualizerMode('oscilloscope')">
+            <span class="btn-icon">📊</span> Tactical Oscilloscope
+          </button>
+        </div>
+
+        <!-- Canvas Oscilloscope / 3D Holographic Orb Visualizer -->
+        <div class="visualizer-wrapper" id="visualizer-container">
+          <canvas id="audio-canvas" width="480" height="180"></canvas>
           <div class="visualizer-overlay" id="visualizer-overlay">
             <span id="visualizer-status-text">AUDIO IDLE // MONITORING VAD</span>
+          </div>
+          <div class="orb-pulse-rings" id="orb-pulse-rings">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
           </div>
         </div>
 
@@ -130,84 +145,110 @@
         </div>
       </section>
 
-      <!-- Center Column: Interactive Scenario Command Deck -->
-      <section class="card scenarios-card">
+      <!-- Center Column: Live Conversational Voice Agent & Clinical Deck -->
+      <section class="card scenarios-card voice-agent-card">
         <div class="card-header">
           <div class="header-title">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <h2>INTERACTIVE SCENARIO RUNNER</h2>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            <h2>LIVE CLINICAL VOICE AGENT</h2>
           </div>
-          <span class="badge-status highlight">EVIDENCE BENCHMARKS</span>
+          <div class="voice-agent-status-badge" id="agent-voice-state">
+            <span class="dot pulse-green" id="agent-state-dot"></span>
+            <span id="agent-state-text">AGENT STANDBY // READY TO TALK</span>
+          </div>
         </div>
 
-        <p class="section-desc">
-          Trigger live clinical simulations to observe instant Silero VAD barge-in, sub-150ms Rime audio cutoff, and atomic state fencing in real-time.
-        </p>
-
-        <!-- Scenario Action Cards -->
-        <div class="scenario-actions-grid">
-          <!-- Scenario 1: Normal Flow -->
-          <button class="scenario-btn btn-normal" id="btn-scenario-normal" onclick="runScenario('normal')">
-            <div class="btn-top">
-              <span class="scenario-tag">SCENARIO 1</span>
-              <span class="run-icon">▶</span>
-            </div>
-            <strong class="scenario-title">Standard Clinical Lookup</strong>
-            <p class="scenario-desc">Normal flow: Epinephrine 1mg IV for 80kg cardiac arrest. No interruptions.</p>
-          </button>
-
-          <!-- Scenario 2: Hard Voice Interruption -->
-          <button class="scenario-btn btn-stress" id="btn-scenario-stress" onclick="runScenario('interruption')">
-            <div class="btn-top">
-              <span class="scenario-tag badge-danger">SCENARIO 2 (HARD CHALLENGE)</span>
-              <span class="run-icon">⚡</span>
-            </div>
-            <strong class="scenario-title">Deliberate Mid-Lookup Interruption</strong>
-            <p class="scenario-desc">Morphine 80kg interrupted mid-flight; revised to 25kg pediatric Fentanyl. Stale data fenced.</p>
-          </button>
-
-          <!-- Scenario 3: 5x Rapid Stress -->
-          <button class="scenario-btn btn-rapid" id="btn-scenario-rapid" onclick="runScenario('rapid')">
-            <div class="btn-top">
-              <span class="scenario-tag badge-amber">SCENARIO 3</span>
-              <span class="run-icon">🔥</span>
-            </div>
-            <strong class="scenario-title">5x Rapid Barge-In Stress</strong>
-            <p class="scenario-desc">5 rapid consecutive interruptions to stress-test memory buffers and state convergence.</p>
-          </button>
-        </div>
-
-        <!-- Direct Rime Voice Synthesis Playground -->
-        <div class="rime-synthesizer-deck">
-          <div class="deck-header">
-            <h3>DIRECT RIME TTS PLAYGROUND & BARGE-IN TESTER</h3>
-            <span class="tech-pill">Model: coda • Speaker: lawton</span>
-          </div>
-
-          <!-- Quick Preset Clinical Chips -->
-          <div class="quick-chips">
-            <button class="chip" onclick="setSynthesizerText('Administer one gram Tranexamic acid I-V push over ten minutes immediately.')">TXA 1g IV Push</button>
-            <button class="chip" onclick="setSynthesizerText('Verified: Pediatric dose for Fentanyl on 25 kg patient is 25 to 50 micrograms IV slow push.')">Pediatric Fentanyl</button>
-            <button class="chip" onclick="setSynthesizerText('Verified: Standard cardiac arrest dose for Epinephrine is 1 mg IV push every 3 to 5 minutes.')">Epinephrine (1mg CPR)</button>
-            <button class="chip" onclick="setSynthesizerText('Glasgow Coma Scale eight, blood pressure 120 over 80, S-P-O-2 eighty-eight percent.')">Vitals Check</button>
-          </div>
-
-          <div class="input-row">
-            <input type="text" id="synth-input" class="synth-input" placeholder="Enter clinical phrase for Rime speech synthesis..." value="Administer one gram Tranexamic acid I-V push over ten minutes immediately.">
-            <button class="btn-primary synth-btn" id="btn-synthesize" onclick="synthesizeSpokenText()">
-              <svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-              <span>Speak via Rime</span>
+        <!-- Live Mic & Full-Duplex Controls -->
+        <div class="voice-controls-panel">
+          <div class="voice-buttons-row">
+            <button class="btn-voice-live" id="btn-live-voice" onclick="toggleLiveVoiceConversation()">
+              <span class="mic-icon">🎙️</span>
+              <span id="live-voice-btn-text">START LIVE VOICE (HANDS-FREE)</span>
             </button>
-            <button class="btn-danger synth-btn" id="btn-interrupt" onclick="triggerManualBargeIn()">
-              <span>⚡ Barge-In Stop</span>
+            <button class="btn-voice-ptt" id="btn-ptt-voice" onmousedown="startPttSpeech()" onmouseup="stopPttSpeech()" ontouchstart="startPttSpeech()" ontouchend="stopPttSpeech()">
+              <span class="ptt-icon">🔘</span>
+              <span>HOLD TO SPEAK (PTT)</span>
+            </button>
+            <button class="btn-voice-barge" id="btn-bargein" onclick="triggerManualBargeIn()">
+              <span class="barge-icon">⚡</span>
+              <span>BARGE-IN / INTERRUPT</span>
             </button>
           </div>
-
-          <div class="audio-player-wrapper" id="player-wrapper">
-            <audio id="rime-audio-element" controls style="width: 100%; display: none;"></audio>
-            <div class="audio-feedback" id="audio-feedback-text">Ready to synthesize with Rime (coda/lawton).</div>
+          <div class="voice-live-indicator" id="voice-live-indicator">
+            <span class="indicator-text" id="live-transcript-preview">Speak naturally into your mic: e.g. "Calculate Epinephrine for 80kg adult" or interrupt mid-sentence!</span>
           </div>
         </div>
+
+        <!-- Spoken Quick Action Prompts (Radio Phraseology) -->
+        <div class="quick-radio-phrases">
+          <span class="phrases-lbl">Quick Voice Prompts:</span>
+          <div class="phrases-grid">
+            <button class="phrase-chip" onclick="handleVoiceTurn('Checking standard dose for Epinephrine on 80 kilogram cardiac patient.')">
+              🫀 Epinephrine 80kg Cardiac
+            </button>
+            <button class="phrase-chip chip-interrupt" onclick="handleVoiceTurn('Wait! Correction! Patient is pediatric 25 kilograms, switch to Fentanyl!')">
+              ⚡ Barge-In: "Switch to 25kg Fentanyl!"
+            </button>
+            <button class="phrase-chip" onclick="handleVoiceTurn('Severe trauma hemorrhage, administer Tranexamic Acid and check tourniquet protocol.')">
+              🩸 TXA Hemorrhage Protocol
+            </button>
+            <button class="phrase-chip" onclick="handleVoiceTurn('Suspected tension pneumothorax, prepare needle chest decompression landmarks.')">
+              🫁 Needle Decompression
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Clinical Dialogue Timeline -->
+        <div class="conversation-wrapper">
+          <div class="conversation-header">
+            <h3>SPOKEN CONVERSATION & CLINICAL DOSAGE FEED</h3>
+            <span class="tech-pill" id="dialogue-counter">2 Turns</span>
+          </div>
+          <div class="conversation-feed" id="conversation-feed">
+            <!-- Initial Greeting Bubble -->
+            <div class="dialogue-bubble agent-bubble">
+              <div class="bubble-header">
+                <span class="speaker-name">🤖 AEGIS MEDIC</span>
+                <span class="bubble-time">SYSTEM</span>
+                <span class="tech-tag">RIME CODA (LAWTON)</span>
+              </div>
+              <div class="bubble-body">
+                "Aegis Medic online. Ready for tactical clinical queries, medication dosage calculations, or trauma protocol navigation. Speak hands-free or press hold to speak."
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Clinical Dosage Card Drawer -->
+        <div class="active-dosage-drawer" id="active-dosage-drawer">
+          <div class="drawer-header">
+            <span class="drawer-title">💊 ACTIVE CLINICAL DOSAGE ORDER</span>
+            <span class="drawer-fence-tag" id="drawer-fence-id">FENCE TOKEN #1</span>
+          </div>
+          <div class="dosage-card-content" id="dosage-card-content">
+            <div class="dosage-grid">
+              <div class="dosage-field">
+                <span class="dosage-lbl">MEDICATION</span>
+                <strong class="dosage-val text-highlight" id="card-med">Epinephrine (1:10,000)</strong>
+              </div>
+              <div class="dosage-field">
+                <span class="dosage-lbl">CALCULATED DOSE</span>
+                <strong class="dosage-val text-success" id="card-dose">1.0 mg (10 mL)</strong>
+              </div>
+              <div class="dosage-field">
+                <span class="dosage-lbl">ROUTE & TIMING</span>
+                <strong class="dosage-val" id="card-route">IV / IO Push q3-5min</strong>
+              </div>
+              <div class="dosage-field">
+                <span class="dosage-lbl">PATIENT PROFILE</span>
+                <strong class="dosage-val" id="card-patient">Adult (80 kg)</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hidden Audio Playback Element for Rime Streaming -->
+        <audio id="rime-audio-element" style="display: none;"></audio>
       </section>
 
       <!-- Right Column: Real-Time Event Stream & Performance Matrix -->

@@ -63,3 +63,31 @@ def test_simulate_interruption_stress_stream(client):
     assert "STATE_FENCE_DISCARD" in data
     assert "Fentanyl" in data
     assert "SCENARIO_COMPLETE" in data
+
+
+def test_voice_turn_clinical_query(client):
+    """Verify conversational voice agent endpoint processes medication queries."""
+    response = client.post(
+        "/api/voice-turn",
+        json={"transcript": "Checking Epinephrine dose for 80 kilogram cardiac patient.", "triage_level": "stat"},
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"] == "SUCCESS"
+    assert "Epinephrine" in data["reply_text"]
+    assert data["dosage_card"]["medication"] == "Epinephrine"
+    assert "fence_id" in data
+
+
+def test_voice_turn_barge_in_correction(client):
+    """Verify barge-in detection and state fencing on verbal correction."""
+    response = client.post(
+        "/api/voice-turn",
+        json={"transcript": "Wait! Correction! Switch to pediatric 25 kilograms Fentanyl!", "triage_level": "urgent"},
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["status"] == "SUCCESS"
+    assert data["is_barge_in"] is True
+    assert "Fentanyl" in data["reply_text"]
+    assert data["dosage_card"]["patient_weight_kg"] == 25.0

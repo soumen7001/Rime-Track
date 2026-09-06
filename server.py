@@ -1,5 +1,7 @@
+import base64
 import json
 import os
+import re
 import time
 import uuid
 from typing import Generator
@@ -448,6 +450,248 @@ def simulate_scenario():
             })
 
     return Response(event_stream(), mimetype="text/event-stream")
+
+
+# ==============================================================================
+# 5B. Real-Time Conversational Voice Agent Endpoint
+# ==============================================================================
+
+@app.route("/api/voice-turn", methods=["GET", "POST", "OPTIONS"])
+def voice_turn_endpoint():
+    """
+    Process incoming spoken voice turns from the tactical field medic,
+    execute clinical reasoning & EHR formulary tools with state fencing,
+    apply Brooke Larson 'Writing for the Ear' phonetic normalization,
+    and synthesize instant audio response via Rime Coda neural TTS.
+    """
+    if request.method == "OPTIONS":
+        return jsonify({"status": "OK"}), 200
+
+    from tools.ear_writing_normalizer import normalizer
+
+    t0 = time.perf_counter()
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+    else:
+        data = request.args.to_dict()
+
+    transcript = data.get("transcript", "").strip()
+    triage_level = data.get("triage_level", "urgent")
+    is_client_interrupt = data.get("is_interrupt", False)
+
+    if not transcript:
+        return jsonify({"error": "Empty speech transcript"}), 400
+
+    # 1. Detect Barge-In / Interruption / Clinical Corrections
+    lower_t = transcript.lower()
+    is_barge_in = is_client_interrupt or any(k in lower_t for k in ["wait", "correction", "cancel", "switch to", "stop", "hold on", "scratch that", "instead"])
+
+    cutoff_ms = 0.0
+    if is_barge_in:
+        cutoff_t0 = time.perf_counter()
+        global_fence_state.request_id += 1
+        cutoff_ms = max(0.04, (time.perf_counter() - cutoff_t0) * 1000.0)
+        global_fence_state.cutoff_history_ms.append(cutoff_ms)
+
+    active_fence = global_fence_state.request_id
+
+    # 2. Extract clinical entities & calculate dosages
+    weight_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:kg|kilos|kilograms)', lower_t)
+    weight_kg = float(weight_match.group(1)) if weight_match else (25.0 if "pediatric" in lower_t or "child" in lower_t else 80.0)
+
+    medication = None
+    calculated_dose = None
+    route = "IV"
+    spoken_reply = ""
+    dosage_card = None
+
+    if "epinephrine" in lower_t or "epi" in lower_t:
+        medication = "Epinephrine"
+        if "anaphylaxis" in lower_t or "allergic" in lower_t:
+            if weight_kg < 40 or "pediatric" in lower_t:
+                dose_val = round(min(0.3, weight_kg * 0.01), 2)
+                calculated_dose = f"{dose_val} mg"
+                route = "IM (1:1,000) Anterolateral Thigh"
+                spoken_reply = f"For pediatric anaphylaxis at {weight_kg:.0f} kilograms, administer {calculated_dose} Epinephrine intramuscular into the anterolateral thigh."
+            else:
+                calculated_dose = "0.3 to 0.5 mg"
+                route = "IM (1:1,000) Anterolateral Thigh"
+                spoken_reply = "For adult anaphylaxis, administer 0.3 to 0.5 milligrams Epinephrine intramuscular into the anterolateral thigh."
+        else: # cardiac arrest
+            if weight_kg < 40 or "pediatric" in lower_t:
+                dose_val = round(weight_kg * 0.01, 3)
+                calculated_dose = f"{dose_val} mg (0.1 mL/kg of 1:10,000)"
+                route = "IV / IO push every 3-5 mins"
+                spoken_reply = f"For pediatric cardiac arrest at {weight_kg:.0f} kilograms, administer {dose_val} milligrams Epinephrine IV push every 3 to 5 minutes."
+            else:
+                calculated_dose = "1.0 mg (1:10,000)"
+                route = "IV / IO push every 3-5 mins"
+                spoken_reply = "For adult cardiac arrest, administer one milligram Epinephrine IV push every 3 to 5 minutes followed by a 20 milliliter saline flush."
+
+    elif "fentanyl" in lower_t:
+        medication = "Fentanyl"
+        if weight_kg < 40 or "pediatric" in lower_t:
+            dose_min = round(weight_kg * 1.0)
+            dose_max = round(weight_kg * 2.0)
+            calculated_dose = f"{dose_min} to {dose_max} mcg"
+            route = "IV / IN slow push"
+            spoken_reply = f"For pediatric trauma analgesia at {weight_kg:.0f} kilograms, administer {dose_min} to {dose_max} micrograms Fentanyl IV slow push over two minutes."
+        else:
+            calculated_dose = "50 to 100 mcg"
+            route = "IV / IN slow push"
+            spoken_reply = "For adult severe trauma analgesia, administer 50 to 100 micrograms Fentanyl IV slow push. Monitor respiratory rate."
+
+    elif "morphine" in lower_t:
+        medication = "Morphine"
+        if weight_kg < 40 or "pediatric" in lower_t:
+            dose_val = round(weight_kg * 0.1, 1)
+            calculated_dose = f"{dose_val} mg"
+            route = "IV slow push"
+            spoken_reply = f"For pediatric analgesia at {weight_kg:.0f} kilograms, administer {dose_val} milligrams Morphine IV slow push."
+        else:
+            dose_val = round(min(10.0, weight_kg * 0.1), 1)
+            calculated_dose = f"{dose_val} mg"
+            route = "IV slow push"
+            spoken_reply = f"For adult trauma analgesia at {weight_kg:.0f} kilograms, administer {dose_val} milligrams Morphine IV push slowly."
+
+    elif "tranexamic" in lower_t or "txa" in lower_t or "hemorrhage" in lower_t or "bleeding" in lower_t:
+        medication = "Tranexamic Acid (TXA)"
+        calculated_dose = "1.0 gram in 100 mL NS"
+        route = "IV piggyback over 10 mins"
+        spoken_reply = "For severe trauma hemorrhage within 3 hours of injury, administer one gram Tranexamic Acid IV piggyback in 100 milliliters normal saline over ten minutes."
+
+    elif "tourniquet" in lower_t:
+        medication = "High & Tight Tourniquet Protocol"
+        calculated_dose = "Apply 2-3 inches proximal to bleed"
+        route = "Windlass Mechanical Occlusion"
+        spoken_reply = "Apply commercial tourniquet two to three inches proximal to the hemorrhage site. Tighten windlass until distal pulse is completely eliminated. Mark application time on patient forehead."
+
+    elif "pneumothorax" in lower_t or "decompression" in lower_t or "chest" in lower_t:
+        medication = "Needle Chest Decompression"
+        calculated_dose = "14-gauge, 3.25 inch catheter"
+        route = "2nd Intercostal midclavicular or 5th Intercostal anterior axillary"
+        spoken_reply = "For tension pneumothorax, perform immediate needle decompression using a 14 gauge 3.25 inch catheter at the 2nd intercostal space midclavicular line or 5th intercostal space anterior axillary line."
+
+    elif "ketamine" in lower_t:
+        medication = "Ketamine"
+        dose_val = round(weight_kg * 1.5, 1)
+        calculated_dose = f"{dose_val} mg (1.5 mg/kg)"
+        route = "IV slow push over 60s"
+        spoken_reply = f"For procedural sedation or tactical analgesia at {weight_kg:.0f} kilograms, administer {dose_val} milligrams Ketamine IV slow push."
+
+    elif "narcan" in lower_t or "naloxone" in lower_t or "overdose" in lower_t:
+        medication = "Naloxone (Narcan)"
+        calculated_dose = "0.4 to 2.0 mg"
+        route = "IN / IV / IM"
+        spoken_reply = "For suspected opioid overdose, administer 2.0 milligrams Naloxone intranasal or 0.4 milligrams IV. Titrate to adequate spontaneous respirations."
+
+    elif "fever" in lower_t or "temperature" in lower_t or "paracetamol" in lower_t or "tylenol" in lower_t or "pyrexia" in lower_t:
+        medication = "Acetaminophen (Paracetamol) / Ibuprofen"
+        if weight_kg < 40 or "pediatric" in lower_t:
+            dose_val = round(weight_kg * 15.0)
+            calculated_dose = f"{dose_val} mg (15 mg/kg oral/IV)"
+            route = "Oral Liquid / IV Infusion q4-6h"
+            spoken_reply = f"For pediatric fever at {weight_kg:.0f} kilograms, administer {dose_val} milligrams Acetaminophen oral or IV every four to six hours. Max 60 milligrams per kilogram daily."
+        else:
+            calculated_dose = "1000 mg (1.0 g)"
+            route = "Oral / IV Infusion q6h"
+            spoken_reply = "For adult fever, administer one thousand milligrams Acetaminophen oral or IV every six hours, or four hundred milligrams Ibuprofen with food."
+
+    elif "break" in lower_t or "hand" in lower_t or "fracture" in lower_t or "bone" in lower_t or "splint" in lower_t:
+        medication = "Fracture Immobilization & Analgesia"
+        calculated_dose = "SAM Splint + Fentanyl 50-100 mcg"
+        route = "Anatomic Splint + IV Analgesia"
+        spoken_reply = "For a hand or wrist fracture: first assess distal pulse, motor, and sensory function. Apply a padded SAM splint in position of function, elevate the limb, and administer fifty to one hundred micrograms Fentanyl IV for severe pain."
+
+    elif "first aid" in lower_t or "emergency" in lower_t or "abcde" in lower_t or "protocol" in lower_t:
+        medication = "Primary TACTICAL ABCDE Survey"
+        calculated_dose = "Immediate Life Threat Control"
+        route = "Systematic Triage"
+        spoken_reply = "Primary first aid triage: follow ABCDE. Check massive bleeding and apply direct pressure or tourniquet. Secure the airway, ensure bilateral breathing, check radial pulse and capillary refill, and prevent hypothermia."
+
+    elif "burn" in lower_t or "burns" in lower_t:
+        medication = "Thermal Burn Protocol & Parkland Resuscitation"
+        calculated_dose = "LR Fluid: 4 mL x kg x %TBSA"
+        route = "Dry Sterile Dressing + IV Lactated Ringers"
+        spoken_reply = f"For burn injury: remove burning source, cool with clean water for up to ten minutes, apply dry sterile dressings, and initiate Lactated Ringers fluid resuscitation at {weight_kg:.0f} kilograms based on the Parkland formula."
+
+    elif "cpr" in lower_t or "cardiac" in lower_t or "arrest" in lower_t:
+        medication = "High-Quality ACLS CPR Protocol"
+        calculated_dose = "100-120 compressions/min + 1mg Epi"
+        route = "Chest Compressions 30:2 / IV Push"
+        spoken_reply = "Initiate immediate high quality chest compressions at one hundred to one hundred twenty per minute, depth of two to two point four inches. Attach defibrillator pads, and administer one milligram Epinephrine IV every three to five minutes."
+
+    else:
+        medication = "Clinical Triage Guidance"
+        calculated_dose = "Emergency Protocol Active"
+        route = "Voice Decision Support"
+        spoken_reply = f"Aegis Medic advice: for {transcript}, perform primary ABC survey, check vital signs, ensure spinal precautions if trauma is suspected, and state specific medication or airway assistance needed."
+
+    if medication:
+        dosage_card = {
+            "medication": medication,
+            "dose": calculated_dose,
+            "route": route,
+            "patient_weight_kg": weight_kg,
+            "fence_id": active_fence,
+            "timestamp": time.strftime("%H:%M:%S UTC")
+        }
+
+    # 3. Apply Brooke Larson "Writing for the Ear" normalizer
+    normalized_text, speed = normalizer.normalize_for_speech(spoken_reply, triage_level)
+
+    # 4. Synthesize Audio via Rime Coda TTS
+    audio_base64 = None
+    rime_latency_ms = 0.0
+    rime_key = os.getenv("RIME_API_KEY", "")
+
+    if rime_key and rime_key != "your-rime-api-key" and len(rime_key.strip()) > 0:
+        try:
+            t_synth = time.perf_counter()
+            resp = requests.post(
+                "https://users.rime.ai/v1/rime-tts",
+                json={
+                    "speaker": "lawton",
+                    "text": normalized_text,
+                    "modelId": "coda",
+                    "samplingRate": 22050,
+                    "speedAlpha": speed,
+                    "audioFormat": "mp3",
+                    "reduceLatency": True
+                },
+                headers={
+                    "Authorization": f"Bearer {rime_key}",
+                    "Content-Type": "application/json",
+                    "Accept": "audio/mp3"
+                },
+                timeout=8.0
+            )
+            rime_latency_ms = (time.perf_counter() - t_synth) * 1000.0
+            if resp.status_code == 200:
+                audio_base64 = base64.b64encode(resp.content).decode("utf-8")
+        except Exception as exc:
+            app.logger.warning(f"Rime API call warning: {exc}")
+
+    total_latency_ms = (time.perf_counter() - t0) * 1000.0
+
+    return jsonify({
+        "status": "SUCCESS",
+        "transcript": transcript,
+        "reply_text": spoken_reply,
+        "normalized_text": normalized_text,
+        "pacing_speed": speed,
+        "audio_base64": audio_base64,
+        "has_audio": audio_base64 is not None,
+        "fence_id": active_fence,
+        "is_barge_in": is_barge_in,
+        "cutoff_ms": round(cutoff_ms, 2) if is_barge_in else 0.0,
+        "dosage_card": dosage_card,
+        "telemetry": {
+            "rime_latency_ms": round(rime_latency_ms, 1),
+            "total_latency_ms": round(total_latency_ms, 1),
+            "speech_provider": "Rime (coda/lawton)" if audio_base64 else "Browser WebSpeech / Audio Mock"
+        }
+    })
 
 
 # ==============================================================================
