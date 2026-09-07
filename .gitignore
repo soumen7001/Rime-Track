@@ -18,6 +18,9 @@ api_key.md
 .coverage
 htmlcov/
 
-# IDE
+# IDE & Temp
 .vscode/
 .idea/
+tempCodeRunnerFile*
+*.log
+agent_memory.json

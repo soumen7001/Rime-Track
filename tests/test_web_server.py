@@ -29,7 +29,7 @@ def test_telemetry_endpoint(client):
     data = response.get_json()
     assert data["status"] == "ONLINE"
     assert data["speech_provider"]["model_id"] == "coda"
-    assert data["speech_provider"]["speaker_id"] == "lawton"
+    assert data["speech_provider"]["speaker_id"] == "wawona"
     assert data["benchmarks"]["interruption_cutoff_ms"] <= 150.0
 
 
@@ -74,7 +74,7 @@ def test_voice_turn_clinical_query(client):
     assert response.status_code == 200
     data = response.get_json()
     assert data["status"] == "SUCCESS"
-    assert "Epinephrine" in data["reply_text"]
+    assert "epinephrine" in data["reply_text"].lower()
     assert data["dosage_card"]["medication"] == "Epinephrine"
     assert "fence_id" in data
 
@@ -89,5 +89,5 @@ def test_voice_turn_barge_in_correction(client):
     data = response.get_json()
     assert data["status"] == "SUCCESS"
     assert data["is_barge_in"] is True
-    assert "Fentanyl" in data["reply_text"]
+    assert "fentanyl" in data["reply_text"].lower()
     assert data["dosage_card"]["patient_weight_kg"] == 25.0

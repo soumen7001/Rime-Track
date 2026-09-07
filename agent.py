@@ -59,7 +59,8 @@ class FieldMedicAgent(Agent):
                 "3. Speak numbers and dosages clearly (e.g., 'one gram', 'twenty-five micrograms', 'I-V push'). "
                 "4. When medication lookups are requested, execute the get_med_dosage tool. "
                 "5. Confirm medication, verified dosage, and route unambiguously. "
-                "6. Never invent dosage numbers outside verified tool outputs."
+                "6. Never invent dosage numbers outside verified tool outputs. "
+                "7. If the user asks about an unrelated topic outside trauma care, medication calculations, or tactical clinical response, politely inform them that it is outside your clinical mission scope and redirect them back to patient care."
             ),
         )
         self.fence_state = fence_state
@@ -184,17 +185,17 @@ class FieldMedicAgent(Agent):
 def create_tts_engine(api_key: Optional[str] = None, use_websocket: bool = True) -> Tuple[Any, str]:
     """
     Initializes Rime TTS as primary spoken output provider.
-    Configuration: model="coda", speaker="lawton", lang="eng"
+    Configuration: model="coda", speaker="wawona", lang="eng"
     Provides visible fallback observability if credentials are not configured.
     """
     rime_key = api_key or os.getenv("RIME_API_KEY")
     if rime_key and rime_key != "your-rime-api-key" and len(rime_key.strip()) > 0:
         transport_label = "WebSocket Stream" if use_websocket else "HTTP Stream"
-        provider_name = f"Rime (Model: coda, Speaker: lawton, Lang: eng, Transport: {transport_label})"
+        provider_name = f"Rime (Model: coda, Speaker: wawona, Lang: eng, Transport: {transport_label})"
         print(f"[CONFIG] Active Speech Provider: {provider_name}")
         tts_instance = rime.TTS(
             model="coda",
-            speaker="lawton",
+            speaker="wawona",
             lang="eng",
             reduce_latency=True,
             use_websocket=use_websocket,

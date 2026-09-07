@@ -53,7 +53,7 @@ PROVIDER_CONFIGS = {
     "rime": {
         "name": "Rime (Coda)",
         "model": "coda",
-        "speaker": "lawton",
+        "speaker": "wawona",
         "audio_format": "pcm_22050",
         "transport": "HTTP/WS Streaming",
         "description": "Ultra-low latency conversational engine with responsive state fencing"

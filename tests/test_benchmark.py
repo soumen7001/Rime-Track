@@ -12,7 +12,7 @@ def test_benchmark_runner_structure():
 
     rime_data = report["providers"]["rime"]
     assert rime_data["model"] == "coda"
-    assert rime_data["speaker"] == "lawton"
+    assert rime_data["speaker"] == "wawona"
     assert rime_data["measured_ttfa_ms"] > 0
     assert rime_data["clinical_phoneme_clarity_score"] > 9.0
 

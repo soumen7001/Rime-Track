@@ -148,12 +148,12 @@ class TestInterruptionLatency:
 
     def test_tts_provider_factory(self) -> None:
         """Verify TTS engine instantiation and visible provider disclosure."""
-        # Test 1: Rime TTS instance with model coda, speaker lawton
+        # Test 1: Rime TTS instance with model coda, speaker wawona
         tts_engine, provider_name = create_tts_engine()
         assert tts_engine is not None
         assert "Rime" in provider_name
         assert "coda" in provider_name
-        assert "lawton" in provider_name
+        assert "wawona" in provider_name
         print(f"\n[BENCH] Verified Active Rime Engine: {provider_name}")
 
         # Test 2: Visible fallback observability when RIME_API_KEY is empty
