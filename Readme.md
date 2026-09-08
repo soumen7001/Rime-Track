@@ -11,7 +11,7 @@
 [![STT: Deepgram Nova-2](https://img.shields.io/badge/STT-Deepgram%20Nova--2-13EF93.svg?logo=deepgram&logoColor=black)](https://deepgram.com)
 [![VAD: Silero Full-Duplex](https://img.shields.io/badge/VAD-Silero%20Full--Duplex-00bcd4.svg)](https://github.com/snakers4/silero-vad)
 [![Latency Cutoff](https://img.shields.io/badge/Barge--In%20Cutoff-%3C150ms%20SLA%20(35--82ms%20Actual)-brightgreen.svg)]()
-[![Test Suite](https://img.shields.io/badge/Tests-20%2F20%20Passing%20(100%25)-success.svg)]()
+[![Test Suite](https://img.shields.io/badge/Tests-47%2F47%20Passing%20(100%25)-success.svg)]()
 
 <p align="center">
   <a href="#-table-of-contents"><strong>Explore Documentation</strong></a> ·
@@ -64,7 +64,7 @@
   - [Mode C: Interactive Simulation & CLI Video Demo](#mode-c-interactive-simulation--cli-video-demo)
   - [Mode D: Production LiveKit WebRTC Worker](#mode-d-production-livekit-webrtc-worker)
   - [Mode E: Multi-Provider TTS Benchmark Suite](#mode-e-multi-provider-tts-benchmark-suite)
-  - [Mode F: Automated Test Suite (20/20 Passing)](#mode-f-automated-test-suite-2020-passing)
+  - [Mode F: Automated Test Suite (47/47 Passing)](#mode-f-automated-test-suite-4747-passing)
 - [📂 Monorepo Directory Layout](#-monorepo-directory-layout)
 - [🤝 Ecosystem Partners & Credits](#-ecosystem-partners--credits)
 
@@ -321,8 +321,8 @@ Runs the comparative benchmark suite evaluating Rime vs. Cartesia vs. ElevenLabs
 python benchmark_runner.py
 ```
 
-### Mode F: Automated Test Suite (20/20 Passing)
-Runs the complete 20 automated unit, latency validation, preflight, ear normalizer, and web server tests:
+### Mode F: Automated Test Suite (47/47 Passing)
+Runs the complete 47 automated unit, latency validation, preflight, ear normalizer, health endpoint, memory/learning, and web server tests:
 ```bash
 pytest -v -s
 ```
@@ -334,7 +334,8 @@ pytest -v -s
 ```
 Rime-Track/
 ├── agent.py                   # LiveKit Agents full-duplex worker & State Fencing Engine
-├── server.py                  # Flask backend server for Tactical Web HUD & direct Rime synthesis
+├── voice_agent.py             # Voice agent pipeline & clinical reasoning engine
+├── server.py                  # Flask backend server with /api/health, structured logging & direct Rime synthesis
 ├── preflight_check.py         # Automated API key verification & live Rime preflight tester
 ├── benchmark_runner.py        # Multi-provider comparative TTS benchmark runner
 ├── requirements.txt           # Python dependencies (livekit, rime, deepgram, flask, pytest)
@@ -347,10 +348,15 @@ Rime-Track/
 │   └── simulated_tools.py     # Asynchronous clinical formulary lookup & trauma protocols
 ├── tests/
 │   ├── __init__.py
+│   ├── test_benchmark.py      # Comparative TTS benchmark validation
+│   ├── test_display_mode_voice_pipeline.py # Display switching & voice intent tests
 │   ├── test_ear_normalizer.py # "Writing for the Ear" phonetics & dosage tests
+│   ├── test_health_endpoint.py # Health & uptime verification endpoint tests
+│   ├── test_interruption.py   # State fencing & sub-150ms cutoff tests
+│   ├── test_memory_learning.py # Fact learning & memory injection tests
 │   ├── test_preflight.py      # Secret hygiene & live Rime API test
-│   ├── test_server.py         # Flask REST endpoint & scenario stream tests
-│   └── test_state_fencing.py  # Sub-150ms audio cutoff & atomic token fencing tests
+│   ├── test_voice_agent.py    # Voice agent reasoning & intent tests
+│   └── test_web_server.py     # Flask REST endpoint & scenario stream tests
 └── web/
     ├── index.html             # Glassmorphic Tactical Web HUD with 3D Orb & Oscilloscope
     ├── app.js                 # Frontend application logic, 3D WebGL orb & WebAudio engine

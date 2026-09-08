@@ -118,7 +118,7 @@ Rime Track/
 ├── .env.example                       # Environment variable template (no secrets)
 ├── .gitignore                         # Ignores .env, __pycache__, api_key.md, etc.
 ├── agent.py                           # Main LiveKit Agents worker (Phase 1–2 implementation)
-├── server.py                          # Flask tactical HUD web server (799 lines, 7 sections)
+├── server.py                          # Flask tactical HUD web server (8 sections, structured logging middleware)
 ├── preflight_check.py                 # Organizer & preflight verification script
 ├── benchmark_runner.py                # Multi-provider TTS benchmark suite
 ├── tools/
@@ -135,7 +135,10 @@ Rime Track/
     ├── test_preflight.py              # 3 tests: env hygiene, live Rime catalog, real cutoff
     ├── test_web_server.py             # 7 tests: routes, telemetry, voice-turn, SSE streams
     ├── test_benchmark.py              # 2 tests: benchmark report, corpus validity
-    └── test_ear_normalizer.py         # 4 tests: expansions, vitals, pacing, markdown cleaning
+    ├── test_health_endpoint.py        # 4 tests: health check, uptime, service pings, X-Request-ID
+    ├── test_ear_normalizer.py         # 4 tests: expansions, vitals, pacing, markdown cleaning
+    ├── test_voice_agent.py            # 7 tests: init, key validation, response gen, scope, farewell
+    └── test_memory_learning.py        # 4 tests: fact learning, rules, corrections, context injection
 ```
 
 ---
@@ -305,6 +308,7 @@ Implements Brooke Larson's "Writing for the Ear" guidelines to optimize LLM-gene
 |-------|--------|-------------|
 | `/` | GET | Serves `web/index.html` |
 | `/<path>` | GET | Static asset proxy from `web/` |
+| `/api/health` | GET | Live service health check with uptime, version, and per-service ping latency |
 | `/api/telemetry` | GET | Live system telemetry: provider status, fence state, benchmark metrics |
 | `/api/token` | GET/POST | Generates LiveKit WebRTC access token (JWT) |
 | `/api/synthesize` | POST | Direct Rime TTS synthesis via REST API |
@@ -314,7 +318,7 @@ Implements Brooke Larson's "Writing for the Ear" guidelines to optimize LLM-gene
 | `/api/normalize-speech` | POST | Brooke Larson phonetic & urgency normalization |
 | `/api/tts-stream` | POST | Direct in-browser Rime audio streaming with zero config |
 
-**Total: 10 endpoints across 7 sections.**
+**Total: 11 endpoints across 8 sections.** All requests include structured logging with unique `X-Request-ID` headers.
 
 #### Telemetry Endpoint (`/api/telemetry`)
 
@@ -545,12 +549,16 @@ tests/test_web_server.py::test_voice_turn_barge_in_correction             PASSED
 | `tests/test_interruption.py` | 6 tests | Real wall-clock cutoff latency, state fencing, rapid stress |
 | `tests/test_preflight.py` | 3 tests | Environment hygiene, live Rime catalog, real wall-clock cutoff |
 | `tests/test_web_server.py` | 7 tests | HUD routes, telemetry, voice-turn, token generation, SSE streams |
+| `tests/test_display_mode_voice_pipeline.py` | 10 tests | Display mode commands, natural variations, contextual go-back |
+| `tests/test_health_endpoint.py` | 4 tests | Health check, uptime, service pings, X-Request-ID middleware |
+| `tests/test_voice_agent.py` | 7 tests | Agent init, key validation, response generation, scope rejection, farewell |
+| `tests/test_memory_learning.py` | 4 tests | Fact learning, custom rules, mistake correction, context injection |
 
-**Total: 22 tests, all passing.**
+**Total: 47 tests, all passing.**
 
 Run all tests:
 ```bash
-pytest tests/ -v          # Run all 22 tests
+pytest tests/ -v          # Run all 47 tests
 pytest tests/ -v -s       # With live output capture
 ```
 

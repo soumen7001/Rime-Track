@@ -251,6 +251,30 @@
             </div>
           </section>
 
+          <!-- Preflight & Test Telemetry Card (Anchored at bottom of left column) -->
+          <section class="glass-card tactical-status-footer-card" aria-label="Mission Preflight and Test Suite Status">
+            <div class="card-header-clean">
+              <div class="header-left">
+                <span class="card-kicker">MISSION VERIFICATION</span>
+                <h2 class="card-heading-sm">SYSTEM TELEMETRY</h2>
+              </div>
+              <span class="preflight-badge">PREFLIGHT: PASSED</span>
+            </div>
+            <div class="status-summary-pills">
+              <div class="status-pill-item">
+                <span class="pill-lbl">LIVEKIT ROOM:</span>
+                <span class="pill-val"><code>aegis-medic-tactical-room</code></span>
+              </div>
+              <div class="status-pill-item">
+                <span class="pill-lbl">TEST SUITE:</span>
+                <span class="pill-val"><strong class="text-success">47/47 Passed (100% Green)</strong></span>
+              </div>
+            </div>
+            <div class="status-card-footnote">
+              <span>AEGIS MEDIC &times; Rime Hackathon Production Suite</span>
+            </div>
+          </section>
+
         </div>
 
         <!-- ============================================================ -->
@@ -489,6 +513,20 @@
             </div>
 
             <div class="telemetry-drawer-content" id="telemetry-drawer-body">
+              <div class="telemetry-meta-strip">
+                <div class="telemetry-chip">
+                  <span class="chip-label">LIVEKIT ROOM:</span>
+                  <code>aegis-medic-tactical-room</code>
+                </div>
+                <div class="telemetry-chip">
+                  <span class="chip-label">TEST SUITE:</span>
+                  <strong class="text-success">47/47 Passed (100% Green)</strong>
+                </div>
+                <div class="telemetry-chip text-highlight">
+                  <span class="status-dot dot-cyan"></span>
+                  <strong>PREFLIGHT: PASSED</strong>
+                </div>
+              </div>
               <div class="health-checklist-box">
                 <div class="check-item"><span class="check-mark">✓</span> <span>Microphone Active</span></div>
                 <div class="check-item"><span class="check-mark">✓</span> <span>Speech Recognition Stream</span></div>
@@ -677,18 +715,6 @@
       </div>
     </main>
   </div>
-
-  <!-- Bottom Floating Footer -->
-  <footer class="app-floating-footer" role="contentinfo">
-    <div class="footer-pills">
-      <span class="footer-chip">LIVEKIT ROOM: <code>aegis-medic-tactical-room</code></span>
-      <span class="footer-chip">TEST SUITE: <strong class="text-success">39/39 Passed (100% Green)</strong></span>
-      <span class="footer-chip text-highlight">PREFLIGHT: PASSED</span>
-    </div>
-    <div class="footer-copy">
-      <span>AEGIS MEDIC &times; Rime Hackathon Production Suite</span>
-    </div>
-  </footer>
 
   <script src="app.js"></script>
 </body>

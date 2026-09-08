@@ -472,6 +472,169 @@ body.aegis-app {
   font-size: 11px;
 }
 
+.status-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.preflight-badge {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-success);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  letter-spacing: 0.5px;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 10px 0;
+}
+
+.sidebar-meta-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-meta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sidebar-meta-lbl {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  font-weight: 700;
+}
+
+.sidebar-meta-val {
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.sidebar-meta-val code {
+  color: var(--accent-highlight);
+  background: rgba(96, 165, 250, 0.12);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+.sidebar-brand-credit {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 2px 4px;
+  line-height: 1.3;
+}
+
+/* Telemetry Meta Strip in Diagnostics Panel */
+.telemetry-meta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: rgba(7, 17, 31, 0.85);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+.telemetry-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.telemetry-chip .chip-label {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.telemetry-chip code {
+  color: var(--accent-highlight);
+  background: rgba(96, 165, 250, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10.5px;
+}
+
+/* Tactical Status & Preflight Card (Bottom of Left Column) */
+.tactical-status-footer-card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.tactical-status-footer-card:hover {
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.status-summary-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(7, 17, 31, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.status-pill-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.status-pill-item .pill-lbl {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.status-pill-item .pill-val {
+  color: var(--text-secondary);
+}
+
+.status-pill-item .pill-val code {
+  color: var(--accent-highlight);
+  background: rgba(96, 165, 250, 0.12);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10.5px;
+}
+
+.status-card-footnote {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-align: center;
+  padding-top: 2px;
+}
+
 /* ==============================================================================
    MAIN VIEWPORT & 3-COLUMN DASHBOARD GRID
    ============================================================================== */
@@ -1817,10 +1980,12 @@ body.aegis-app {
    FOOTER
    ============================================================================== */
 
+.app-static-footer,
 .app-floating-footer {
-  margin: 16px 18px 14px 18px;
+  position: static;
+  margin: 28px 18px 20px 18px;
   padding: 10px 20px;
-  background: rgba(13, 27, 42, 0.75);
+  background: rgba(13, 27, 42, 0.65);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -1828,20 +1993,34 @@ body.aegis-app {
   align-items: center;
   justify-content: space-between;
   font-size: 11px;
+  clear: both;
 }
 
 .footer-pills {
   display: flex;
-  gap: 12px;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .footer-chip {
   color: var(--text-muted);
   font-family: var(--font-mono);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.footer-chip code {
+  color: var(--accent-highlight);
+  background: rgba(96, 165, 250, 0.12);
+  padding: 1px 5px;
+  border-radius: 4px;
 }
 
 .footer-copy {
   color: var(--text-dim);
+  font-size: 11px;
 }
 
 /* ==============================================================================

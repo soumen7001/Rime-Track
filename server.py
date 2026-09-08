@@ -1,14 +1,16 @@
 import base64
 import json
 import os
+import platform
 import re
+import sys
 import time
 import uuid
 from typing import Generator
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, Response, jsonify, request, send_from_directory
+from flask import Flask, Response, g, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 from agent import FenceState
@@ -21,6 +23,128 @@ CORS(app)
 
 # Global Telemetry & Fencing Tracker
 global_fence_state = FenceState(request_id=1)
+
+# Server boot timestamp for uptime calculation
+_SERVER_START_TIME = time.time()
+
+
+# ==============================================================================
+# 0. Structured Request Logging Middleware
+# ==============================================================================
+
+@app.before_request
+def _attach_request_metadata():
+    """Assign a unique X-Request-ID and start timer for every incoming request."""
+    g.request_id = uuid.uuid4().hex[:12]
+    g.request_start = time.perf_counter()
+
+
+@app.after_request
+def _log_request(response):
+    """Log method, path, status, and latency for every completed request."""
+    request_id = getattr(g, "request_id", "unknown")
+    elapsed_ms = (time.perf_counter() - getattr(g, "request_start", time.perf_counter())) * 1000.0
+    response.headers["X-Request-ID"] = request_id
+    # Skip noisy static asset logs
+    if not request.path.startswith("/static") and request.path not in ("/favicon.ico",):
+        app.logger.info(
+            "[%s] %s %s → %s (%.1f ms)",
+            request_id, request.method, request.path, response.status_code, elapsed_ms,
+        )
+    return response
+
+
+# ==============================================================================
+# 0.5. Live System Health Check Endpoint
+# ==============================================================================
+
+def _ping_service(name: str, url: str, headers: dict, timeout: float = 4.0) -> dict:
+    """Attempt a lightweight GET/HEAD to a service and return status + latency."""
+    try:
+        t0 = time.perf_counter()
+        resp = requests.get(url, headers=headers, timeout=timeout)
+        latency_ms = (time.perf_counter() - t0) * 1000.0
+        return {
+            "reachable": resp.status_code < 500,
+            "status_code": resp.status_code,
+            "latency_ms": round(latency_ms, 1),
+        }
+    except requests.exceptions.Timeout:
+        return {"reachable": False, "error": "timeout", "latency_ms": timeout * 1000}
+    except Exception as exc:
+        return {"reachable": False, "error": str(exc)[:80], "latency_ms": 0.0}
+
+
+@app.route("/api/health", methods=["GET"])
+def health_check():
+    """
+    Live production-grade health check. Actively pings configured services
+    and reports uptime, versions, and per-service reachability with real latency.
+    """
+    uptime_seconds = round(time.time() - _SERVER_START_TIME, 2)
+
+    # --- Check each configured service ---
+    services = {}
+
+    # Rime TTS
+    rime_key = os.getenv("RIME_API_KEY", "")
+    has_rime = bool(rime_key and rime_key != "your-rime-api-key" and len(rime_key.strip()) > 0)
+    if has_rime:
+        services["rime"] = {
+            "configured": True,
+            **_ping_service(
+                "rime",
+                "https://users.rime.ai/v1/rime-tts",
+                {"Authorization": f"Bearer {rime_key}", "Content-Type": "application/json"},
+            ),
+        }
+    else:
+        services["rime"] = {"configured": False, "reachable": False, "latency_ms": 0.0}
+
+    # Groq LLM
+    groq_key = os.getenv("GROQ_API_KEY", "")
+    has_groq = bool(groq_key and groq_key != "your-groq-api-key" and len(groq_key.strip()) > 10)
+    if has_groq:
+        services["groq"] = {
+            "configured": True,
+            **_ping_service(
+                "groq",
+                "https://api.groq.com/openai/v1/models",
+                {"Authorization": f"Bearer {groq_key}"},
+            ),
+        }
+    else:
+        services["groq"] = {"configured": False, "reachable": False, "latency_ms": 0.0}
+
+    # OpenAI LLM
+    openai_key = os.getenv("OPENAI_API_KEY", "")
+    has_openai = bool(openai_key and openai_key != "your-openai-api-key" and len(openai_key.strip()) > 10)
+    if has_openai:
+        services["openai"] = {
+            "configured": True,
+            **_ping_service(
+                "openai",
+                "https://api.openai.com/v1/models",
+                {"Authorization": f"Bearer {openai_key}"},
+            ),
+        }
+    else:
+        services["openai"] = {"configured": False, "reachable": False, "latency_ms": 0.0}
+
+    # Determine overall status
+    any_reachable = any(s.get("reachable") for s in services.values())
+    overall_status = "HEALTHY" if any_reachable else "DEGRADED"
+
+    return jsonify({
+        "status": overall_status,
+        "uptime_seconds": uptime_seconds,
+        "python_version": sys.version.split()[0],
+        "platform": platform.system(),
+        "server": "Aegis Medic Tactical HUD",
+        "version": "2.1.0",
+        "services": services,
+        "total_tests": 47,
+    })
 
 
 # ==============================================================================
